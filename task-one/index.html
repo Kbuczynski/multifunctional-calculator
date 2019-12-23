@@ -1,11 +1,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+    <title>Calculator</title>
 
     <link
       rel="stylesheet"
@@ -13,56 +12,57 @@
       integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX"
       crossorigin="anonymous"
     />
-
-    <title>Task one</title>
   </head>
   <body>
     <div class="container">
       <div class="row mb-3 mt-3">
         <div class="col">
-          <input type="text" id="view" />
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">
-          <button type="button" class="btn bg-danger text-light">C</button>
-          <button type="button" class="btn bg-danger text-light">CE</button>
+          <input type="text" id="view" class="text-right border border-info" readonly/>
+          <br>
+          <span id="message"></span>
         </div>
       </div>
 
       <div class="row">
         <div class="col">
-          <button type="button" class="btn bg-secondary text-light">1</button>
-          <button type="button" class="btn bg-secondary text-light">2</button>
-          <button type="button" class="btn bg-secondary text-light">3</button>
-          <button type="button" class="btn bg-info text-light">*</button>
+          <input type="button" class="btn bg-danger text-light" value="C"></input>
+          <input type="button" class="btn bg-danger text-light" value="CE"></input>
         </div>
       </div>
 
       <div class="row">
         <div class="col">
-          <button type="button" class="btn bg-secondary text-light">4</button>
-          <button type="button" class="btn bg-secondary text-light">5</button>
-          <button type="button" class="btn bg-secondary text-light">6</button>
-          <button type="button" class="btn bg-info text-light">/</button>
+          <input type="button" class="btn bg-secondary text-light" value="1"></input>
+          <input type="button" class="btn bg-secondary text-light" value="2"></input>
+          <input type="button" class="btn bg-secondary text-light" value="3"></input>
+          <input type="button" class="btn bg-info text-light" value="*"></input>
         </div>
       </div>
 
       <div class="row">
         <div class="col">
-          <button type="button" class="btn bg-secondary text-light">7</button>
-          <button type="button" class="btn bg-secondary text-light">8</button>
-          <button type="button" class="btn bg-secondary text-light">9</button>
-          <button type="button" class="btn bg-info text-light">-</button>
+          <input type="button" class="btn bg-secondary text-light" value="4"></input>
+          <input type="button" class="btn bg-secondary text-light" value="5"></input>
+          <input type="button" class="btn bg-secondary text-light" value="6"></input>
+          <input type="button" class="btn bg-info text-light" value="/"></input>
         </div>
       </div>
 
       <div class="row">
         <div class="col">
-          <button type="button" class="btn bg-secondary text-light">.</button>
-          <button type="button" class="btn bg-secondary text-light">0</button>
-          <button type="button" class="btn bg-secondary text-light">=</button>
-          <button type="button" class="btn bg-info text-light">+</button>
+          <input type="button" class="btn bg-secondary text-light" value="7"></input>
+          <input type="button" class="btn bg-secondary text-light" value="8"></input>
+          <input type="button" class="btn bg-secondary text-light" value="9"></input>
+          <input type="button" class="btn bg-info text-light" value="-"></input>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <input type="button" class="btn bg-secondary text-light" value="."></input>
+          <input type="button" class="btn bg-secondary text-light" value="0"></input>
+          <input type="button" class="btn bg-secondary text-light" value="="></input>
+          <input type="button" class="btn bg-info text-light" value="+"></input>
         </div>
       </div>
     </div>
