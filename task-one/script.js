@@ -1,55 +1,105 @@
 const view = document.querySelector("#view");
 const message = document.querySelector("#message");
-const buttons = document.querySelectorAll("input[type=button]");
+const buttons = document.querySelector("#buttons");
+const errorMessage = "Something went wrong\n press C to continue";
 const signs = ["+", "-", "*", "/"];
 let equation = "";
 let lastNumber = "";
-const errorMessage = "Something went wrong\n press C to continue";
-let i = 0;
+let numberOfSigns = 0;
+let isLock = false;
 
-buttons.forEach(element => {
-  element.addEventListener("click", e => {
-    const sign = e.target.value;
+const handleError = () => {
+  message.innerText = errorMessage;
+  isLock = true;
+}
 
-    switch (sign) {
-      case "C":
-        equation = "";
-        message.innerText = "";
-        break;
-      case "CE":
-        equation = equation.toString().substring(0, equation.toString().length - 1);
-        break;
-      case "=":
-        try {
-          if (eval(equation).toString() == "Infinity") {
-            equation = "";
-            message.innerText = errorMessage;
-          } else equation = eval(equation);
-        } catch {
-          message.innerText = errorMessage;
-        }
-        break;
-      default:
-        signs.forEach(element => {
-          if (sign == element) i++;
-        });
+const calc = equation => {
+  try {
+    if (eval(equation).toString() === "Infinity") {
+      equation = "";
+      handleError();
+    } else equation = eval(equation);
+  } catch {
+    handleError();
+  }
 
-        if (i > 1) {
-          i = 1;
-          equation = eval(equation);
-          equation += sign;
-        } else equation += sign;
-        break;
-    }      
+  return equation;
+}
 
-    if (isNaN(equation) && equation != ".") {
+buttons.addEventListener("click", e => {
+  let sign = "";
+
+  if (isLock) {
+    if (e.target.value === "C") {
+      sign = e.target.value;
+      isLock = false;
+    } else sign = null;
+  } else sign = e.target.value;
+
+  switch (sign) {
+    case "C":
+      equation = "";
+      message.innerText = "";
+      numberOfSigns = 0;
+      break;
+    case "CE":
+      let isSign = false;
+
       signs.forEach(element => {
-        if (equation.split(element)[1] != null) {
-          if (equation.split(element)[1] == "") lastNumber = equation.split(element)[0];
-          else lastNumber = equation.split(element)[1];
+        if (equation.toString().includes(element)) {
+          equation = equation.split(element)[0];
+          isSign = true;
         }
       });
-      view.value = lastNumber;
-    } else view.value = equation;
+
+      if (!isSign) equation = "";
+
+      numberOfSigns = 0;
+      break;
+    case "=":
+      equation = calc(equation);
+      break;
+    default:
+      if (sign != null) {
+        if (signs.includes(sign)) numberOfSigns++;
+
+        if (numberOfSigns > 1) {
+          numberOfSigns = 1;
+          equation = calc(equation);
+          equation += sign;
+        } else {
+          const lastSign = equation.split("")[equation.split("").length - 1];
+
+          if (lastSign != ".") {
+            if (sign === "." && isNaN(lastSign) && lastSign != null) equation += "0";
+            if (equation === "" && sign === ".") equation += "0"; 
+          } else if (sign === ".") handleError();
+
+          equation += sign;
+        }
+      }
+      break;
+  }
+
+  equation = equation.toString();
+
+  signs.forEach(element => {
+    if (element != "-") {
+      if (equation.indexOf(element) === 0) handleError();
+    }
   });
+
+  if (equation.split(".").length > 4) handleError();
+
+  if (isNaN(equation) && equation != ".") {
+    signs.forEach(element => {
+      if (element != "-" && equation.includes(element, 0)) {
+        if (equation.split(element)[1] != null) {
+          if (equation.split(element)[1] === "") lastNumber = equation.split(element)[0];
+          else lastNumber = equation.split(element)[1];
+        }
+      }
+    });
+    view.value = lastNumber;
+  } else view.value = equation;
 });
