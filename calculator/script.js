@@ -1,23 +1,38 @@
 const view = document.querySelector("#view"), 
       message = document.querySelector("#message"), 
-      buttons = document.querySelector("#buttons");
-
-const errorMessage = "Something went wrong\n press C to continue";
+      buttons = document.querySelector("#buttons"),
+      dropDownMenu = document.querySelector("#dropdown-menu");
 
 const signs = ["+", "-", "*", "/", "**", "√"];
 
 let equation = "", 
     lastNumber = "", 
-    isLock = false, 
-    indexLastSign = 0;
+    isLock = false,
+    eqToCalc = "",
+    endOfN = true;
 
 const handleError = () => {
-  message.innerText = errorMessage;
+  message.innerText = "Something went wrong\n press C to continue";
   isLock = true;
 }
 
+const handleDataError = () => {
+  message.innerText = "Data download error"
+}
+
+const getCurrency = async () => {
+  const API = "https://api.nbp.pl/api/exchangerates/tables/a/?format=json";
+
+  try {
+    const reposne = await fetch(API);
+    return await reposne.json();
+  } catch {
+    handleDataError();
+  }
+}
+
 const calc = equation => {
-  if (equation.includes("√")) equation = equation.replace(/√/g, "**1/");
+  if (equation.split("(").length !== equation.split(")").length) equation += ")";
 
   try {
     if (eval(equation).toString() === "Infinity") {
@@ -30,6 +45,29 @@ const calc = equation => {
 
   return equation;
 }
+
+getCurrency()
+  .then(data => {
+    try {
+      const [ table ] = data;
+      const { rates } = table;
+      
+      rates.forEach(element => {
+        const { code, mid } = element;
+        
+        let btn = document.createElement("input");
+  
+        btn.type = "button";
+        btn.classList.add("dropdown-item");
+        btn.value = `${code} ${mid}`;
+  
+        dropDownMenu.appendChild(btn);
+      });
+    } catch {
+      handleDataError();
+    }
+    
+  });
 
 buttons.addEventListener("click", e => {
   let sign = "";
@@ -44,6 +82,7 @@ buttons.addEventListener("click", e => {
   switch (sign) {
     case "C":
       equation = "";
+      eqToCalc = "";
       message.innerText = "";
       break;
     case "CE":
@@ -51,34 +90,68 @@ buttons.addEventListener("click", e => {
 
       signs.forEach(element => {
         if (equation.toString().includes(element)) {
-          equation = equation.split(element)[0];
           isSign = true;
+          equation = equation.split(element)[0];
         }
       });
 
-      if (!isSign) equation = "";
+      signs.forEach(element => {
+        if (eqToCalc.toString().includes(element)) {
+          isSign = true;
+          eqToCalc = equation.split(element)[0];
+        }
+      });
+
+      if (!isSign) {
+        equation = "";
+        eqToCalc = "";
+      }
       break;
     case "=":
-      equation = calc(equation);
+      equation = calc(eqToCalc);
       break;
     default:
       if (sign != null) {
+        let currency = false;
+        let mid = 0;
+
+        if (sign.split(" ").length === 2) {
+          currency = true;
+          const tab = sign.split(" ");
+          sign = tab[0];
+          mid = tab[1];
+        }
+
         const lastSign = equation.split("")[equation.split("").length - 1];
 
+        if (isNaN(lastSign) && isNaN(sign) && typeof lastSign !== 'undefined' && lastSign !== ")" && sign !== "." && sign !== "(") {
+          signs.forEach(element => {
+            if (lastSign !== element && sign.length !== 3) handleError();
+          });
+        }
+
+        //addition 0 before comma
         if (lastSign != ".") {
           if (sign === "." && isNaN(lastSign) && lastSign != null) equation += "0";
           if (equation === "" && sign === ".") equation += "0"; 
         } else if (sign === ".") handleError();
 
-        signs.forEach(element => {
-          if (lastSign === element) {
-            signs.forEach(element => {
-              if (element === sign) handleError();
-            })
-          } 
-        });
+        //change √ to x**(1/n)
+        if (lastSign === "√") {
+          eqToCalc = eqToCalc.substring(0, eqToCalc.length - 1);
+          eqToCalc += "**(1/";
+          endOfN = false;
+        }
+
+        if (!isNaN(lastSign) && isNaN(sign) && endOfN === false) {
+          eqToCalc += ")";
+          endOfN = true;
+        }
     
         equation += sign;
+        eqToCalc += sign;
+
+        if (currency) eqToCalc = eqToCalc.replace(sign, `${mid}*`);
       }
       break;
   }
@@ -91,14 +164,5 @@ buttons.addEventListener("click", e => {
     }
   });
 
-  signs.forEach(element => {
-    if (equation.lastIndexOf(element) > indexLastSign) indexLastSign = equation.lastIndexOf(element);
-  });
-
-  if (isNaN(equation[indexLastSign])) lastNumber = equation.substring(indexLastSign + 1, equation.length);
-  else lastNumber = equation.substring(indexLastSign, equation.length);
-
-  indexLastSign = 0;
-
-  view.value = lastNumber;
+  view.value = equation;
 });
