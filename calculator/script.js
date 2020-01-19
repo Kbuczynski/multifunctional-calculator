@@ -1,23 +1,72 @@
-const view = document.querySelector("#view"), 
+const view = document.querySelector("#view"),
       message = document.querySelector("#message"), 
       buttons = document.querySelector("#buttons"),
       dropDownMenu = document.querySelector("#dropdown-menu");
 
-const signs = ["+", "-", "*", "/", "**", "√"];
-
-let equation = "", 
-    lastNumber = "", 
-    isLock = false,
+let equation = "",
     eqToCalc = "",
-    endOfN = true;
+    isLock = false,
+    endOfN = true,
+    error = false,
+    isCurrencyValue = false;
 
 const handleError = () => {
-  message.innerText = "Something went wrong\n press C to continue";
+  error = true;
   isLock = true;
 }
 
 const handleDataError = () => {
-  message.innerText = "Data download error"
+  message.innerText = "Data download error\n press C to hide this message";
+}
+
+const calc = equation => {
+  if (equation.split("(").length !== equation.split(")").length) equation += ")";
+  endOfN = true;
+  isCurrencyValue = false;
+
+  try {
+    if (eval(equation).toString() === "Infinity") {
+      handleError();
+    } else equation = eval(equation).toString();
+  } catch {
+    handleError();
+  }
+
+  return equation;
+}
+
+const isMathSign = str => {
+  const signs = ["+", "-", "*", "/", "**", "√"];
+  let isMathSign = false;
+
+  signs.forEach(element => {
+    if (str === element) isMathSign = true;
+  });
+
+  return isMathSign;
+}
+
+const lastSign = equation => equation[equation.length - 1];
+
+const deleteLastNumber = equation => {
+  if (isMathSign(lastSign(equation))) {
+    equation = equation.substring(0, equation.length - 1);
+  }
+  
+  while (!isMathSign(lastSign(equation)) && typeof lastSign(equation) !== "undefined") {
+    equation = equation.substring(0, equation.length - 1);
+  }
+
+  return equation;
+}
+
+const addZero = (equation, sign) => {
+  if (lastSign(equation) != ".") {
+    if (sign === "." && isNaN(lastSign(equation)) && lastSign(equation) != null) equation += "0";
+    if (equation === "" && sign === ".") equation += "0"; 
+  } else if (sign === ".") handleError();
+
+  return equation;
 }
 
 const getCurrency = async () => {
@@ -31,19 +80,14 @@ const getCurrency = async () => {
   }
 }
 
-const calc = equation => {
-  if (equation.split("(").length !== equation.split(")").length) equation += ")";
+const getCurrencyButton = (code, mid) => {
+  let btn = document.createElement("a");
 
-  try {
-    if (eval(equation).toString() === "Infinity") {
-      equation = "";
-      handleError();
-    } else equation = eval(equation);
-  } catch {
-    handleError();
-  }
+  btn.href = "";
+  btn.classList.add("dropdown-item");
+  btn.innerText = `${code} ${mid}`;
 
-  return equation;
+  return btn
 }
 
 getCurrency()
@@ -55,11 +99,7 @@ getCurrency()
       rates.forEach(element => {
         const { code, mid } = element;
         
-        let btn = document.createElement("input");
-  
-        btn.type = "button";
-        btn.classList.add("dropdown-item");
-        btn.value = `${code} ${mid}`;
+        let btn = getCurrencyButton(code, mid)
   
         dropDownMenu.appendChild(btn);
       });
@@ -70,51 +110,38 @@ getCurrency()
   });
 
 buttons.addEventListener("click", e => {
+  e.preventDefault();
+
   let sign = "";
+  const targetName = e.target.tagName;
 
   if (isLock) {
-    if (e.target.value === "C") {
-      sign = e.target.value;
+    if (e.target.innerText === "C") {
+      sign = e.target.innerText;
       isLock = false;
     } else sign = "";
-  } else sign = e.target.value;
+  } else sign = e.target.innerText;
 
   switch (sign) {
     case "C":
       equation = "";
       eqToCalc = "";
       message.innerText = "";
+      error = false;
       break;
     case "CE":
-      let isSign = false;
-
-      signs.forEach(element => {
-        if (equation.toString().includes(element)) {
-          isSign = true;
-          equation = equation.split(element)[0];
-        }
-      });
-
-      signs.forEach(element => {
-        if (eqToCalc.toString().includes(element)) {
-          isSign = true;
-          eqToCalc = equation.split(element)[0];
-        }
-      });
-
-      if (!isSign) {
-        equation = "";
-        eqToCalc = "";
-      }
+      equation = deleteLastNumber(equation);
+      eqToCalc = deleteLastNumber(eqToCalc);
       break;
     case "=":
       equation = calc(eqToCalc);
+      eqToCalc = equation;
       break;
     default:
-      if (sign != null) {
+      if (sign !== null && sign !== "SELECT CURRENCY " && targetName === "BUTTON" || targetName === "A") {
         let currency = false;
         let mid = 0;
-
+        
         if (sign.split(" ").length === 2) {
           currency = true;
           const tab = sign.split(" ");
@@ -122,47 +149,53 @@ buttons.addEventListener("click", e => {
           mid = tab[1];
         }
 
-        const lastSign = equation.split("")[equation.split("").length - 1];
-
-        if (isNaN(lastSign) && isNaN(sign) && typeof lastSign !== 'undefined' && lastSign !== ")" && sign !== "." && sign !== "(") {
-          signs.forEach(element => {
-            if (lastSign !== element && sign.length !== 3) handleError();
-          });
+        if (isNaN(lastSign(equation)) && isNaN(sign) && typeof lastSign(equation) !== 'undefined' && lastSign(equation) !== ")" && sign !== "." && sign !== "(") {
+          if (isMathSign(lastSign(equation)) && sign.length !== 3) handleError();
         }
 
-        //addition 0 before comma
-        if (lastSign != ".") {
-          if (sign === "." && isNaN(lastSign) && lastSign != null) equation += "0";
-          if (equation === "" && sign === ".") equation += "0"; 
-        } else if (sign === ".") handleError();
+        //checking sign before currency
+        if (!isNaN(lastSign(equation)) && sign.length === 3) handleError();
+
+        //adding 0 before comma
+        equation = addZero(equation, sign);
+
+        //adding * before (
+        if (!isNaN(lastSign(equation)) && sign === "(") eqToCalc += "*";
+
+        //adding * after )
+        if (lastSign(equation) === ")" && !isNaN(sign)) eqToCalc += "*";
 
         //change √ to x**(1/n)
-        if (lastSign === "√") {
+        if (lastSign(equation) === "√") {
           eqToCalc = eqToCalc.substring(0, eqToCalc.length - 1);
           eqToCalc += "**(1/";
           endOfN = false;
         }
 
-        if (!isNaN(lastSign) && isNaN(sign) && endOfN === false) {
+        if (!isNaN(lastSign(equation)) && isNaN(sign) && endOfN === false) {
           eqToCalc += ")";
           endOfN = true;
+        }
+
+        //adding ) after value currency
+        if (isCurrencyValue && isMathSign(sign)) {
+          eqToCalc += ")";
+          isCurrencyValue = false;
         }
     
         equation += sign;
         eqToCalc += sign;
 
-        if (currency) eqToCalc = eqToCalc.replace(sign, `${mid}*`);
+        if (isMathSign(equation[0]) && equation[0] !== "-") handleError();
+
+        if (currency) {
+          eqToCalc = eqToCalc.replace(sign, `(${mid}*`);
+          isCurrencyValue = true;
+        }
       }
       break;
   }
 
-  equation = equation.toString();
-
-  signs.forEach(element => {
-    if (element != "-") {
-      if (equation.indexOf(element) === 0) handleError();
-    }
-  });
-
-  view.value = equation;
+  if (error) view.value = "Error press C to continue";
+  else view.value = equation;
 });
