@@ -1,2 +1,2 @@
 # Multifunctional calculator
-Calculator that allows you to count advanced mathematical expressions and convert current exchange rates into PLN
+Calculator for counting advanced mathematical expressions and converting current exchange rates into PLN, performed as a recruitment task for Intive
